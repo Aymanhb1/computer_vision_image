@@ -13,6 +13,10 @@ import pandas as pd
 import streamlit as st
 import tensorflow as tf
 from PIL import Image
+import pillow_heif
+
+# Registers HEIC/HEIF support with Pillow (iPhone photos use this format by default)
+pillow_heif.register_heif_opener()
 
 # --- Config (must match what the model was trained on) ---
 IMG_SIZE = (150, 150)
@@ -69,12 +73,17 @@ st.write(
 
 model = load_model()
 
-uploaded_file = st.file_uploader(
-    "Choose an image...", type=["jpg", "jpeg", "png"]
-)
+uploaded_file = st.file_uploader("Choose an image...")
 
 if uploaded_file is not None:
-    image = Image.open(uploaded_file)
+    try:
+        image = Image.open(uploaded_file)
+    except Exception:
+        st.error(
+            "Couldn't read that file as an image. Make sure it's a valid photo "
+            "(JPG, PNG, HEIC, WEBP, BMP, TIFF, GIF, etc.) and try again."
+        )
+        st.stop()
 
     with st.spinner("Classifying..."):
         predicted_class, confidence, predictions = predict(image, model)
